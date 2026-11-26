@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Tender — Huber FTL Tender Copilot</title>
+<style>
+:root{--ink:#16233a;--mut:#5a6b84;--line:#dbe4ef;--bg:#f4f7fb;--card:#fff;--blue:#0f62fe;--green:#0e7a3d;--amber:#8a5a00;--red:#b42318}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+.wrap{max-width:1020px;margin:0 auto;padding:20px 16px 48px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{font-weight:800}.brand small{display:block;color:var(--mut);font-weight:600}
+.lang button{border:1px solid var(--line);background:#fff;padding:8px 12px;border-radius:999px;cursor:pointer;font-weight:700;margin-left:6px}
+.lang button.on{background:var(--ink);color:#fff}
+.hero{background:var(--ink);color:#fff;border-radius:16px;padding:28px;margin:18px 0}
+.hero h1{margin:0 0 8px;font-size:30px}.hero p{color:#cdd9ea;max-width:780px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;margin:14px 0}
+.card h2{margin:0 0 4px;font-size:20px}.card h2 span{color:var(--blue)}
+.sub{color:var(--mut);margin:0 0 14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+label{display:block;font-size:13px;font-weight:700;color:var(--mut);margin-bottom:4px}
+input{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:15px}
+input[type=range]{padding:0}
+.btn{background:var(--blue);color:#fff;border:0;padding:11px 18px;border-radius:9px;font-weight:800;cursor:pointer}
+.btn.ghost{background:#eef3fa;color:var(--ink);border:1px solid var(--line)}
+.seg button{border:1px solid var(--line);background:#fff;padding:9px 14px;border-radius:8px;cursor:pointer;font-weight:700;margin-right:6px}
+.seg button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.seq{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.step{background:#eef3fa;border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-weight:800}
+.arrow{color:var(--mut);font-weight:900}
+.big{font-size:28px;font-weight:900}
+.kv{display:flex;gap:18px;flex-wrap:wrap;color:var(--mut)}.kv b{color:var(--ink)}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left}
+.alert{border-radius:10px;padding:12px 14px;margin-top:12px;font-weight:650}
+.alert.warn{background:#fff4d6;color:var(--amber);border:1px solid #f0d48a}
+.alert.ok{background:#e6f4ea;color:var(--green);border:1px solid #bfe3c8}
+.note{font-size:13px;color:var(--mut)}footer{color:var(--mut);font-size:13px;text-align:center;margin-top:22px}
+.flip{background:#16233a;color:#fff;border-radius:10px;padding:12px 14px;font-weight:700}
+</style></head><body><div class="wrap">
+<div class="top"><div class="brand">AI TENDER<small data-i18n="brandSub">Huber FTL · Expected cost, not lowest rate</small></div>
+<div class="lang"><button data-lang="en" class="on">English</button><button data-lang="es">Español</button><button data-lang="zh">中文</button></div></div>
+<header class="hero"><h1 data-i18n="heroTitle">Tender the sequence, not just the cheapest carrier</h1>
+<p data-i18n="heroSub">The right first tender depends on what one rejection costs and how much lead time is left. Move the two controls and watch the optimal sequence flip.</p></header>
+
+<section class="card"><h2><span>1</span> · <span data-i18n="cTitle">The two numbers that decide everything</span></h2>
+<p class="sub" data-i18n="cSub">Rejection cost is a [CALIBRATE] parameter — it must come from Huber tender history, not a guess. Spot premium default 1.55 is a starting proxy.</p>
+<div class="grid"><div><label><span data-i18n="rej">Cost of one rejection</span> — <b id="rejV">$120</b></label><input id="rej" type="range" min="0" max="400" step="10" value="120" oninput="run()"></div>
+<div><label><span data-i18n="spotP">Spot premium (× contract rate)</span> — <b id="spotV">1.55×</b></label><input id="spotP" type="range" min="1.1" max="2.2" step="0.05" value="1.55" oninput="run()"></div>
+<div><label data-i18n="lead">Lead time to pickup</label><div class="seg"><button data-lead="4">4h</button><button data-lead="24" class="on">24h</button><button data-lead="48">48h</button></div></div></div>
+<div id="flip" class="flip" style="margin-top:14px"></div></section>
+
+<section class="card"><h2><span>2</span> · <span data-i18n="sTitle">Optimal tender sequence</span></h2>
+<p class="sub" data-i18n="sSub">Synthetic demo carriers. Edit rates or acceptance and the sequence re-optimises. Every prediction shows its basis.</p>
+<div style="overflow:auto"><table><thead><tr><th data-i18n="thC">Carrier</th><th data-i18n="thR">Rate ($)</th><th data-i18n="thP">Acceptance</th><th data-i18n="thB">Basis</th></tr></thead><tbody id="cbody"></tbody></table></div>
+<div id="seqOut"></div>
+<div id="sensOut" style="margin-top:14px"></div></section>
+
+<section class="card"><h2><span>3</span> · <span data-i18n="hTitle">Data hygiene first</span></h2>
+<p class="sub" data-i18n="hSub">Placeholder rates never reach the optimiser. A lane with no valid contract rate is a contract gap, not a tender.</p>
+<div id="hygOut"></div></section>
+
+<section class="card"><h2><span>4</span> · <span data-i18n="csvTitle">Load tender history locally</span></h2>
+<p class="sub" data-i18n="csvSub">CSV with columns lane, carrier, response (ACCEPTED / DECLINED / EXPIRED). The file is read in your browser only — nothing is uploaded.</p>
+<input type="file" id="csvFile" accept=".csv">
+<div id="csvOut"></div></section>
+<footer><span data-i18n="foot">AI Tender v2 · Synthetic demo data only · Real Huber data stays in the IBM environment · Recommendation only — dispatcher decides</span><br><span>v2.0 · 2026-11-25</span></footer>
+</div>
+<script>
+const I18N={
+en:{brandSub:"Huber FTL · Expected cost, not lowest rate",heroTitle:"Tender the sequence, not just the cheapest carrier",heroSub:"The right first tender depends on what one rejection costs and how much lead time is left. Move the two controls and watch the optimal sequence flip.",cTitle:"The two numbers that decide everything",cSub:"Rejection cost is a [CALIBRATE] parameter — it must come from Huber tender history, not a guess. Spot premium default 1.55 is a starting proxy.",rej:"Cost of one rejection",spotP:"Spot premium (× contract rate)",lead:"Lead time to pickup",sTitle:"Optimal tender sequence",sSub:"Synthetic demo carriers. Edit rates or acceptance and the sequence re-optimises. Every prediction shows its basis.",thC:"Carrier",thR:"Rate ($)",thP:"Acceptance",thB:"Basis",hTitle:"Data hygiene first",hSub:"Placeholder rates never reach the optimiser. A lane with no valid contract rate is a contract gap, not a tender.",csvTitle:"Load tender history locally",csvSub:"CSV with columns lane, carrier, response (ACCEPTED / DECLINED / EXPIRED). The file is read in your browser only — nothing is uploaded.",foot:"AI Tender v2 · Synthetic demo data only · Real Huber data stays in the IBM environment · Recommendation only — dispatcher decides",exp:"Expected cost",risk:"Spot risk",sens:"Sensitivity: rejection cost → sequence",flipCheap:"Cheap rejections + time to spare: try the cheapest first.",flipRel:"Expensive rejections: tender the most reliable carrier first.",flipTight:"Only 4 hours left: one tender round — most reliable carrier only.",basis:"30 tenders on this lane (synthetic)",hygBad:"999,999.99 placeholder rate → excluded before optimisation",hygOk:"Valid contract rates: A, B, C",csvOk:"carriers learned from your file",csvBad:"Missing columns: lane, carrier, response"},
+es:{brandSub:"Huber FTL · Costo esperado, no la tarifa más baja",heroTitle:"Licita la secuencia, no solo el transportista más barato",heroSub:"La primera licitación correcta depende del costo de un rechazo y del tiempo restante. Mueve los dos controles y observa cómo cambia la secuencia óptima.",cTitle:"Los dos números que lo deciden todo",cSub:"El costo de rechazo es un parámetro [CALIBRATE]: debe venir del historial de Huber, no de una suposición. Prima spot por defecto 1.55.",rej:"Costo de un rechazo",spotP:"Prima spot (× tarifa de contrato)",lead:"Tiempo hasta la recogida",sTitle:"Secuencia óptima de licitación",sSub:"Transportistas sintéticos de demostración. Edita tarifas o aceptación y la secuencia se reoptimiza.",thC:"Transportista",thR:"Tarifa ($)",thP:"Aceptación",thB:"Base",hTitle:"Primero, higiene de datos",hSub:"Las tarifas de relleno nunca llegan al optimizador. Una ruta sin tarifa válida es una brecha de contrato.",csvTitle:"Cargar historial localmente",csvSub:"CSV con lane, carrier, response. El archivo se lee solo en tu navegador.",foot:"AI Tender v2 · Solo datos sintéticos · Los datos reales quedan en el entorno IBM · Solo recomendación",exp:"Costo esperado",risk:"Riesgo spot",sens:"Sensibilidad: costo de rechazo → secuencia",flipCheap:"Rechazos baratos y tiempo de sobra: prueba primero el más barato.",flipRel:"Rechazos caros: licita primero el más fiable.",flipTight:"Solo quedan 4 horas: una ronda, solo el más fiable.",basis:"30 licitaciones en esta ruta (sintético)",hygBad:"Tarifa de relleno 999.999,99 → excluida antes de optimizar",hygOk:"Tarifas válidas: A, B, C",csvOk:"transportistas aprendidos de tu archivo",csvBad:"Faltan columnas: lane, carrier, response"},
+zh:{brandSub:"Huber 整车 · 期望成本，不是最低价",heroTitle:"派的是顺序，不只是最便宜的那家",heroSub:"第一家派给谁，取决于被拒一次要付出多少代价、还剩多少提前期。动一下这两个控制，看最优顺序怎么翻转。",cTitle:"决定一切的两个数字",cSub:"拒单代价是 [CALIBRATE] 参数，必须从 Huber 真实派单历史里算，不能拍脑袋。Spot 溢价默认 1.55 是起始代理值。",rej:"被拒一次的代价",spotP:"Spot 溢价（× 合同价）",lead:"离提货还有多久",sTitle:"最优派单顺序",sSub:"合成演示承运商。改报价或接单率，顺序会重新优化。每个预测都写明依据。",thC:"承运商",thR:"报价 ($)",thP:"接单率",thB:"依据",hTitle:"先做数据体检",hSub:"占位运价永远进不了优化器。一条线路没有有效合同价，那是合同缺口，不是派单问题。",csvTitle:"在本地加载派单历史",csvSub:"CSV 需含 lane、carrier、response 三列。文件只在你的浏览器里读，不上传。",foot:"AI Tender v2 · 仅合成演示数据 · 真实 Huber 数据留在 IBM 环境 · 仅供推荐，调度员决定",exp:"期望成本",risk:"落到 Spot 的概率",sens:"敏感性：拒单代价 → 派单顺序",flipCheap:"被拒不心疼、时间也够：先试最便宜的。",flipRel:"被拒代价高：一开始就派给最靠谱的。",flipTight:"只剩 4 小时：只有一轮，只能派最靠谱的。",basis:"这条线路 30 次派单（合成）",hygBad:"999,999.99 占位运价 → 优化前已剔除",hygOk:"有效合同价：A、B、C",csvOk:"家承运商已从你的文件学会",csvBad:"缺列：lane、carrier、response"}};
+let LANG='en'; const T=k=>(I18N[LANG]&&I18N[LANG][k])||I18N.en[k]||k;
+function setLang(l){LANG=l;document.querySelectorAll('[data-lang]').forEach(b=>b.classList.toggle('on',b.dataset.lang===l));document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=T(el.dataset.i18n)});renderCarriers();run()}
+document.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>setLang(b.dataset.lang));
+let LEAD=24;
+document.querySelectorAll('[data-lead]').forEach(b=>b.onclick=()=>{LEAD=+b.dataset.lead;document.querySelectorAll('[data-lead]').forEach(x=>x.classList.toggle('on',x===b));run()});
+const escapeHTML=s=>String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]||c));
+let carriers=[{name:'Carrier A',rate:1050,p:0.93},{name:'Carrier B',rate:980,p:0.64},{name:'Carrier C',rate:1020,p:0.80}];
+function renderCarriers(){document.getElementById('cbody').innerHTML=carriers.map((c,i)=>`<tr><td><input value="${escapeHTML(c.name)}" onchange="carriers[${i}].name=this.value;run()"></td><td><input type="number" value="${c.rate}" onchange="carriers[${i}].rate=+this.value;run()"></td><td><input type="number" step="0.01" min="0.02" max="0.99" value="${c.p}" onchange="carriers[${i}].p=+this.value;run()"></td><td class="note">${T('basis')}</td></tr>`).join('')}
+function seqCost(seq,spot,roundCost,esc){let cost=0,reach=1;for(const c of seq){cost+=reach*c.p*c.rate;reach*=(1-c.p);cost+=reach*roundCost}return cost+reach*spot*(1+esc*seq.length)}
+function perms(a,l){if(l===1)return a.map(x=>[x]);const out=[];for(let i=0;i<a.length;i++){const rest=a.slice(0,i).concat(a.slice(i+1));for(const p of perms(rest,l-1))out.push([a[i]].concat(p))}return out}
+function bestSeq(rej,lead,spotP){const valid=carriers.filter(c=>c.rate>0&&c.rate<99999);if(!valid.length)return null;const spot=Math.min(...valid.map(c=>c.rate))*spotP;const rounds=Math.floor(lead/4);const maxLen=Math.max(1,Math.min(4,rounds,valid.length));let best=null,bc=Infinity;for(let l=1;l<=maxLen;l++)for(const perm of perms(valid,l)){const ec=seqCost(perm,spot,rej,0.08);if(ec<bc-1e-9){bc=ec;best=perm}}const risk=best.reduce((a,c)=>a*(1-c.p),1);return{seq:best,cost:bc,risk,spot}}
+function run(){const rej=+document.getElementById('rej').value,spotP=+document.getElementById('spotP').value;document.getElementById('rejV').textContent='$'+rej;document.getElementById('spotV').textContent=spotP.toFixed(2)+'×';const r=bestSeq(rej,LEAD,spotP);if(!r)return;document.getElementById('seqOut').innerHTML=`<div class="seq">${r.seq.map((c,i)=>(i?'<span class="arrow">→</span>':'')+`<span class="step">${i+1}. ${escapeHTML(c.name)} $${c.rate.toLocaleString()} · ${Math.round(c.p*100)}%</span>`).join('')}</div><div class="kv"><span>${T('exp')}: <b>$${r.cost.toFixed(2)}</b></span><span>${T('risk')}: <b>${(r.risk*100).toFixed(1)}%</b></span></div>`;document.getElementById('flip').textContent=LEAD<=4?T('flipTight'):(rej>=200?T('flipRel'):T('flipCheap'));const rows=[0,120,200,300].map(x=>{const q=bestSeq(x,24,spotP);return `<tr><td>$${x}</td><td>24h</td><td>${q.seq.map(c=>escapeHTML(c.name.replace('Carrier ',''))).join(' → ')}</td><td>$${q.cost.toFixed(2)}</td></tr>`}).join('');document.getElementById('sensOut').innerHTML=`<p class="note"><b>${T('sens')}</b></p><table>${rows}</table>`;document.getElementById('hygOut').innerHTML=`<div class="alert warn">⚠️ ${T('hygBad')}</div><div class="alert ok">✅ ${T('hygOk')}</div>`}
+document.getElementById('csvFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;f.text().then(txt=>{const lines=txt.trim().split(/\r?\n/);const head=lines[0].split(',').map(s=>s.trim());const li=head.indexOf('lane'),ci=head.indexOf('carrier'),ri=head.indexOf('response');if(li<0||ci<0||ri<0){document.getElementById('csvOut').innerHTML=`<div class="alert warn">${T('csvBad')}</div>`;return}const stats={};let n=0;for(const line of lines.slice(1)){const v=line.split(',');if(v.length<=Math.max(li,ci,ri))continue;const c=v[ci].trim();stats[c]=stats[c]||{a:0,n:0};stats[c].n++;if(v[ri].trim().toUpperCase()==='ACCEPTED')stats[c].a++;n++}const rows=Object.entries(stats).map(([c,s])=>`<tr><td>${escapeHTML(c)}</td><td>${s.n}</td><td>${(s.a/s.n*100).toFixed(0)}%</td></tr>`).join('');document.getElementById('csvOut').innerHTML=`<div class="alert ok">✅ ${n} · ${Object.keys(stats).length} ${T('csvOk')}</div><table>${rows}</table>`})});
+renderCarriers();run();
+</script></body></html>
