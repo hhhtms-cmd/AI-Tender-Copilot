@@ -1,4 +1,25 @@
-# AI Tender — Huber FTL Tender Copilot (v2)
+# AI Tender — Huber FTL Tender Copilot (v3)
+
+## v3 — acceptance model learned from tender history
+
+`huber_tender_copilot_v3.py` supersedes the v2 acceptance layer:
+
+- Layer 2 is **learned from OTM tender history** (accepted / rejected /
+  expired per tender attempt) instead of hand-set coefficients.
+  Hierarchical shrinkage: lane+carrier → carrier+origin mill → carrier
+  → global, with shrinkage strength chosen on an out-of-time test.
+- Layer 5 uses an **empirical daily capacity** per carrier (90th
+  percentile of accepted loads per pickup day) as a soft cap.
+- Built-in **out-of-time backtest**: train on earlier months, test on
+  later months; reports AUC/Brier and average tender attempts under
+  actual vs. model ordering.
+- Still `[CALIBRATE]`: per-lane carrier rates, rejection/spot costs in
+  USD, and tender sent/response timestamps for wait time per round.
+  Without rates, the sequence minimizes expected tender attempts.
+
+Run inside the approved environment only; do not publish customer data
+or customer-identifying outputs. The v2 expected-cost engine
+(`algorithm.py`) and the demo UI (`index.html`) remain below.
 
 A from-scratch tendering algorithm for Huber Woods full-truckload (FTL),
 mostly 1 order = 1 truck. For each shipment it recommends the tender
